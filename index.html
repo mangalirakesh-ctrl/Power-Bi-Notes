@@ -83,7 +83,7 @@ ol.legend li{break-inside:avoid}
 .layers{display:flex;flex-direction:column;gap:6px;max-width:640px;margin:10px 0}
 .layers div{border-radius:10px;padding:9px 14px;color:#fff;font-size:14.5px}
 .layers div b{display:block}
-.layers div:nth-child(1){background:#605e5c}.layers div:nth-child(2){background:#7a6200}.layers div:nth-child(3){background:#323130}.layers div:nth-child(4){background:#0b6ec2}.layers div:nth-child(5){background:#1b7a3d}
+.layers div:nth-of-type(1){background:#605e5c}.layers div:nth-of-type(2){background:#7a6200}.layers div:nth-of-type(3){background:#323130}.layers div:nth-of-type(4){background:#0b6ec2}.layers div:nth-of-type(5){background:#1b7a3d}
 .layers i{align-self:center;color:var(--a2);font-style:normal;line-height:1;margin:-2px 0}
 .tl{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0;margin:12px 0;border-top:4px solid var(--a)}
 .tl div{padding:12px 12px 4px;position:relative;font-size:14px}
@@ -188,6 +188,64 @@ footer{text-align:center;padding:34px 16px 50px;color:var(--mut)}
     <div><b>4 · Analytics / OLAP models</b>Relationships, measures and calculations (DAX)</div>
     <i>▼</i>
     <div><b>5 · Presentation tools</b>Reports, dashboards and apps people actually use</div>
+  </div>
+
+  <h3>Each layer in detail</h3>
+  <div class="tw"><table class="t"><tr><th>Layer</th><th>What happens here</th><th>Typical tools</th><th>In our sample data</th></tr>
+  <tr><td><b>1 · Data sources</b></td><td>Where raw data is created: structured (tables), semi-structured (JSON, XML) and unstructured (logs, text). Quality problems start here.</td><td>ERP, CRM, SQL Server, Excel, CSV, REST APIs, SharePoint</td><td>Three CSV files: FactSales, DimProduct, DimCustomer</td></tr>
+  <tr><td><b>2 · ETL / ELT</b></td><td><b>Extract</b> data, <b>Transform</b> it (remove duplicates, fix types, split or merge columns, join) and <b>Load</b> it to the target. In ELT the raw data is loaded first and transformed inside the warehouse.</td><td>Power Query, Azure Data Factory, SSIS, dbt</td><td>Promote headers, set Date and number types, remove blank rows</td></tr>
+  <tr><td><b>Staging</b></td><td>Temporary landing area to validate and reconcile data before it reaches the warehouse.</td><td>Staging schema, Lakehouse Bronze layer</td><td>Not needed for 8 rows, essential for millions</td></tr>
+  <tr><td><b>3 · Data storage</b></td><td>A <b>data warehouse</b> keeps cleaned, historical, modeled data. A <b>data lake</b> keeps raw data of any format cheaply. A <b>data mart</b> serves one department (for example Sales).</td><td>Azure Synapse, Snowflake, Fabric Lakehouse, ADLS</td><td>The Power BI in-memory model acts as the store</td></tr>
+  <tr><td><b>4 · Analytics / OLAP</b></td><td>Business logic lives here: relationships, hierarchies (Year &gt; Quarter &gt; Month), measures and security. Enables slice, dice, drill-down and roll-up.</td><td>Power BI semantic model, SSAS Tabular</td><td>Star schema + measures such as <code>Total Sales</code></td></tr>
+  <tr><td><b>5 · Presentation</b></td><td>Interactive reports, dashboards, alerts and self-service exploration for business users.</td><td>Power BI reports, Excel, Teams, mobile</td><td>Column chart of sales by region, KPI cards</td></tr>
+  <tr><td><b>Governance (all layers)</b></td><td>Access control, lineage, data quality, auditing, sensitivity labels.</td><td>Microsoft Purview, Entra ID, RLS</td><td>RLS role "West Team" (chapter 10)</td></tr></table></div>
+  <h3>ETL vs ELT and OLTP vs OLAP</h3>
+  <div class="cards">
+    <div><b>ETL</b>Transform <i>before</i> loading, on a separate engine. Good for moderate data and strict cleansing. Power Query works this way.</div>
+    <div><b>ELT</b>Load raw data first, then transform inside a powerful warehouse or lakehouse. Good for big data and cloud platforms.</div>
+    <div><b>OLTP</b>Runs daily operations (insert, update, delete). Normalized, current data. Example: the billing system that creates each order.</div>
+    <div><b>OLAP</b>Analyses history with fast aggregates. Star schema, read-heavy. Example: the Power BI model summing sales by region.</div>
+  </div>
+  <h3>Power BI architecture: end to end</h3>
+  <div class="flow">
+    <div><b>Data sources</b>Files, databases, cloud apps</div><span>➜</span>
+    <div><b>Gateway</b>Only for on-premises sources</div><span>➜</span>
+    <div><b>Power Query</b>Transform (M language)</div><span>➜</span>
+    <div class="y"><b>Data model + DAX</b>Relationships and measures</div><span>➜</span>
+    <div><b>Report (.pbix)</b>Visuals and pages</div><span>➜</span>
+    <div><b>Service</b>Workspace, refresh, share</div><span>➜</span>
+    <div><b>Consumers</b>Browser, mobile, Teams, embedded</div>
+  </div>
+  <ol>
+    <li><b>Connect:</b> Get data connects to the source; credentials and privacy levels are set.</li>
+    <li><b>Transform:</b> every step is stored as M code and replayed on each refresh.</li>
+    <li><b>Load and model:</b> data is compressed into the in-memory engine; you add relationships, measures and hierarchies.</li>
+    <li><b>Visualize:</b> build report pages with visuals, slicers, bookmarks and drill-through.</li>
+    <li><b>Publish:</b> the .pbix becomes a <b>semantic model (dataset)</b> plus a <b>report</b> in a workspace.</li>
+    <li><b>Share and refresh:</b> pin tiles to a dashboard, package an app, schedule refresh through a gateway for on-premises data.</li>
+    <li><b>Consume:</b> view in the browser, mobile app or Teams; use subscriptions and alerts.</li></ol>
+  <h3>Storage modes</h3>
+  <div class="tw"><table class="t"><tr><th>Mode</th><th>How it works</th><th>Pros</th><th>Cons</th></tr>
+  <tr><td><b>Import</b></td><td>Data is copied and compressed into the model</td><td>Fastest, full DAX and Power Query</td><td>Needs refresh; size limits</td></tr>
+  <tr><td><b>DirectQuery</b></td><td>Each visual sends a query to the source</td><td>Always current; very large data</td><td>Slower; some DAX and transformations limited; load on the source</td></tr>
+  <tr><td><b>Live connection</b></td><td>Connects to an existing semantic model (Service or SSAS)</td><td>One source of truth</td><td>Model cannot be changed locally</td></tr>
+  <tr><td><b>Composite</b></td><td>Mix of Import and DirectQuery tables</td><td>Balance speed and freshness</td><td>More complex design</td></tr>
+  <tr><td><b>Dual</b></td><td>Table behaves as Import or DirectQuery as needed</td><td>Efficient dimension tables</td><td>Needs careful design</td></tr></table></div>
+  <h3>Inside the engine</h3>
+  <div class="cards">
+    <div><b>Mashup engine</b>Runs the Power Query (M) steps during refresh.</div>
+    <div><b>VertiPaq (storage engine)</b>Columnar, compressed, in-memory store. Dictionary, run-length and value encoding make columns with few unique values very small.</div>
+    <div><b>Formula engine</b>Evaluates DAX, builds the query plan and asks VertiPaq for data.</div>
+  </div>
+  <div class="flow"><div><b>Visual</b>needs a number</div><span>➜</span><div><b>DAX query</b>generated by the visual</div><span>➜</span><div><b>Formula engine</b>plans the query</div><span>➜</span><div><b>VertiPaq</b>scans compressed columns</div><span>➜</span><div class="y"><b>Result</b>drawn in the visual</div></div>
+  <h3>Gateway, deployment and security</h3>
+  <div class="cards">
+    <div><b>On-premises data gateway</b>Installed on an always-on machine; makes outbound connections only. Standard mode is shared and supports refresh and DirectQuery; personal mode is for one user and Import only.</div>
+    <div><b>Self-service (Pro)</b>Analysts build and share in workspaces. Fast, but needs governance.</div>
+    <div><b>Managed / enterprise</b>IT publishes certified shared semantic models; analysts build thin reports on top with a live connection.</div>
+    <div><b>Dev, Test, Prod</b>Deployment pipelines promote content between stages, with rules to switch data sources.</div>
+    <div><b>Medallion (Fabric)</b>Bronze (raw), Silver (clean), Gold (modeled) lakehouse layers feed Power BI.</div>
+    <div><b>Security layers</b>Entra ID sign-in, workspace roles, row-level and object-level security, sensitivity labels, encryption in transit and at rest.</div>
   </div>
 </section>
 
@@ -457,7 +515,85 @@ Sales LY     = CALCULATE([Total Sales], SAMEPERIODLASTYEAR(DimDate[Date]))</pre>
   <div class="ex"><h4>Monthly results</h4>
     <div class="grid" data-g="ti"></div>
     <p class="res">Feb MoM = (9,365 − 6,360) ÷ 6,360 = <b>47.2%</b>. YTD is a running total within the year. Sales LY is blank because the sample has no 2023 data.</p></div>
-  <h3>Frequently used functions</h3>
+  <h3>Every formula explained step by step</h3>
+<p>Each block shows the formula, what every part does, and the result on the sample data.</p>
+<div class="ex"><h4>Aggregation: SUM, AVERAGE, MIN, MAX</h4>
+<pre class="dax">Total Sales = SUM(FactSales[SalesAmount])
+Avg Order Value = AVERAGE(FactSales[SalesAmount])
+Smallest Order = MIN(FactSales[SalesAmount])
+Largest Order = MAX(FactSales[SalesAmount])</pre>
+<div class="tw"><table class="t"><tr><th>Part</th><th>What it does</th></tr><tr><td><code>SUM(column)</code></td><td>Adds every value of one column that is visible in the current filter context.</td></tr><tr><td><code>AVERAGE(column)</code></td><td>Adds the values and divides by the count of non-blank values.</td></tr><tr><td><code>MIN / MAX</code></td><td>Return the smallest or largest value; blanks are ignored.</td></tr><tr><td><code>FactSales[SalesAmount]</code></td><td>Table name, then column name in square brackets.</td></tr></table></div>
+<p class="res">Results: <b>19,025</b> · 19,025 ÷ 8 = <b>2,378.13</b> · <b>600</b> (order 2) · <b>5,600</b> (order 5). Select Region = West and Total Sales becomes 6,200 automatically.</p></div>
+<div class="ex"><h4>Counting: COUNT, COUNTROWS, DISTINCTCOUNT</h4>
+<pre class="dax">Orders = COUNTROWS(FactSales)
+Products Sold = DISTINCTCOUNT(FactSales[ProductKey])
+Qty Lines = COUNT(FactSales[Qty])</pre>
+<div class="tw"><table class="t"><tr><th>Part</th><th>What it does</th></tr><tr><td><code>COUNTROWS(table)</code></td><td>Counts the rows of a table. Best way to count orders.</td></tr><tr><td><code>DISTINCTCOUNT(column)</code></td><td>Counts unique values, ignoring repeats.</td></tr><tr><td><code>COUNT(column)</code></td><td>Counts non-blank numeric values in a column.</td></tr></table></div>
+<p class="res">Results: <b>8</b> orders · <b>4</b> distinct products (Laptop, Mouse, Monitor, Keyboard) · 8 quantity lines.</p></div>
+<div class="ex"><h4>Safe division: DIVIDE</h4>
+<pre class="dax">Profit Margin % = DIVIDE([Profit], [Total Sales])
+Safe Ratio = DIVIDE([Profit], 0, 0)</pre>
+<div class="tw"><table class="t"><tr><th>Part</th><th>What it does</th></tr><tr><td><code>1st argument</code></td><td>Numerator.</td></tr><tr><td><code>2nd argument</code></td><td>Denominator.</td></tr><tr><td><code>3rd argument (optional)</code></td><td>Value to return when the denominator is 0 or blank. Default is BLANK.</td></tr></table></div>
+<p class="res">Results: 4,925 ÷ 19,025 = <b>25.9%</b>. The second measure returns <b>0</b> instead of an error. Prefer DIVIDE over the <code>/</code> operator.</p></div>
+<div class="ex"><h4>Iterators: SUMX, AVERAGEX</h4>
+<pre class="dax">Profit (iterator) = SUMX(FactSales, FactSales[SalesAmount] - FactSales[Cost])
+Revenue Check = SUMX(FactSales, FactSales[Qty] * DIVIDE(FactSales[SalesAmount], FactSales[Qty]))</pre>
+<div class="tw"><table class="t"><tr><th>Part</th><th>What it does</th></tr><tr><td><code>FactSales</code></td><td>The table to walk through, one row at a time (creates row context).</td></tr><tr><td><code>Expression</code></td><td>Evaluated for each row, for example SalesAmount − Cost.</td></tr><tr><td><code>Aggregation</code></td><td>SUMX adds the row results; AVERAGEX averages them; MAXX takes the largest.</td></tr></table></div>
+<p class="res">Order 1 gives 4,000 − 3,000 = 1,000; order 2 gives 200; and so on. Total = <b>4,925</b>. Use an iterator when the value must be calculated per row before it is aggregated.</p></div>
+<div class="ex"><h4>Relationship functions: RELATED, RELATEDTABLE, LOOKUPVALUE</h4>
+<pre class="dax">Category = RELATED(DimProduct[Category])          // calculated column in FactSales
+Product Orders = COUNTROWS(RELATEDTABLE(FactSales)) // calculated column in DimProduct
+Region Lookup = LOOKUPVALUE(DimCustomer[Region], DimCustomer[CustomerKey], FactSales[CustomerKey])</pre>
+<div class="tw"><table class="t"><tr><th>Part</th><th>What it does</th></tr><tr><td><code>RELATED</code></td><td>Follows the relationship from the many side to the one side and returns one value.</td></tr><tr><td><code>RELATEDTABLE</code></td><td>Goes the other way: returns the matching rows of the many-side table.</td></tr><tr><td><code>LOOKUPVALUE</code></td><td>Looks up a value by matching keys; works even with no relationship.</td></tr></table></div>
+<p class="res">Order 1 (P1) gets <b>Electronics</b>. Laptop (P1) has <b>3</b> orders (1, 5, 8). Order 3 (customer C3) looks up <b>North</b>.</p></div>
+<div class="ex"><h4>Filter functions: CALCULATE and FILTER</h4>
+<pre class="dax">Large Orders Sales = CALCULATE([Total Sales], FILTER(FactSales, FactSales[SalesAmount] &gt; 2000))
+East Electronics = CALCULATE([Total Sales], DimCustomer[Region] = "East", DimProduct[Category] = "Electronics")</pre>
+<div class="tw"><table class="t"><tr><th>Part</th><th>What it does</th></tr><tr><td><code>CALCULATE(expression, filter, ...)</code></td><td>Evaluates the expression after changing the filter context. A filter on a column replaces any existing filter on that same column.</td></tr><tr><td><code>FILTER(table, condition)</code></td><td>Returns the rows where the condition is true, tested row by row. Needed when the condition uses several columns or a measure.</td></tr><tr><td><code>Several filters</code></td><td>Multiple filters are combined with AND.</td></tr></table></div>
+<p class="res">Orders above 2,000 are 1, 5, 6 and 8: 4,000 + 5,600 + 2,640 + 2,400 = <b>14,640</b>. East electronics = Asha&#39;s laptop order = <b>4,000</b>.</p></div>
+<div class="ex"><h4>Removing filters: ALL, ALLEXCEPT, ALLSELECTED, REMOVEFILTERS</h4>
+<pre class="dax">Grand Total = CALCULATE([Total Sales], ALL(FactSales))
+Category Total = CALCULATE([Total Sales], ALLEXCEPT(DimProduct, DimProduct[Category]))
+Share of Selection = DIVIDE([Total Sales], CALCULATE([Total Sales], ALLSELECTED(DimCustomer)))</pre>
+<div class="tw"><table class="t"><tr><th>Part</th><th>What it does</th></tr><tr><td><code>ALL(table or column)</code></td><td>Ignores every filter on it. Used for the denominator of a % of total.</td></tr><tr><td><code>ALLEXCEPT(table, col, ...)</code></td><td>Removes all filters on the table except the listed columns.</td></tr><tr><td><code>ALLSELECTED</code></td><td>Removes visual filters but keeps slicer and page filters, so the % is of what the user selected.</td></tr><tr><td><code>REMOVEFILTERS</code></td><td>Readable modern form of ALL inside CALCULATE.</td></tr></table></div>
+<p class="res">In the West × Electronics cell, <code>Category Total</code> returns <b>16,400</b> (region filter removed, category kept). Grand Total is always <b>19,025</b>.</p></div>
+<div class="ex"><h4>Other filter helpers: VALUES, SELECTEDVALUE, HASONEVALUE, USERELATIONSHIP</h4>
+<pre class="dax">Chosen Region = SELECTEDVALUE(DimCustomer[Region], "All regions")
+Sales by Ship Date = CALCULATE([Total Sales], USERELATIONSHIP(FactSales[ShipDate], DimDate[Date]))</pre>
+<div class="tw"><table class="t"><tr><th>Part</th><th>What it does</th></tr><tr><td><code>VALUES(column)</code></td><td>Returns the distinct values currently visible.</td></tr><tr><td><code>SELECTEDVALUE(column, alt)</code></td><td>Returns the one selected value, or the alternate when none or many are selected. Good for dynamic titles.</td></tr><tr><td><code>HASONEVALUE</code></td><td>TRUE when exactly one value is visible.</td></tr><tr><td><code>USERELATIONSHIP</code></td><td>Activates an inactive relationship (for example Ship Date instead of Order Date) for one calculation.</td></tr></table></div>
+<p class="res">With the slicer on East the title shows <b>East</b>; with no selection it shows <b>All regions</b>. (ShipDate is an illustrative column; the sample file has only Date.)</p></div>
+<div class="ex"><h4>Logic: IF, SWITCH, VAR and RETURN</h4>
+<pre class="dax">Sales Band = IF([Total Sales] &gt; 5000, "High", "Low")
+Grade = SWITCH(TRUE(), [Total Sales] &gt;= 5500, "A", [Total Sales] &gt;= 5000, "B", "C")
+Margin Check =
+VAR s = [Total Sales]
+VAR p = [Profit]
+RETURN IF(DIVIDE(p, s) &gt;= 0.26, "Good", "Review")</pre>
+<div class="tw"><table class="t"><tr><th>Part</th><th>What it does</th></tr><tr><td><code>IF(test, yes, no)</code></td><td>Returns one of two results.</td></tr><tr><td><code>SWITCH(TRUE(), test1, r1, test2, r2, else)</code></td><td>Checks tests in order and returns the first match. Cleaner than nested IFs.</td></tr><tr><td><code>VAR name = value</code></td><td>Stores a result once; reused and easier to debug.</td></tr><tr><td><code>RETURN</code></td><td>The final expression that uses the variables.</td></tr></table></div>
+<p class="res">West 6,200: <b>High / A</b> · East 5,125: <b>High / B</b> · South 5,040: <b>High / B</b> · North 2,660: <b>Low / C</b>.</p></div>
+<div class="ex"><h4>Text: &amp;, FORMAT, CONCATENATEX</h4>
+<pre class="dax">Label = DimCustomer[Customer] &amp; " (" &amp; DimCustomer[Region] &amp; ")"
+Month Label = FORMAT(DimDate[Date], "MMM YYYY")
+Customer List = CONCATENATEX(DimCustomer, DimCustomer[Customer], ", ", DimCustomer[Customer])</pre>
+<div class="tw"><table class="t"><tr><th>Part</th><th>What it does</th></tr><tr><td><code>&amp;</code></td><td>Joins text pieces.</td></tr><tr><td><code>FORMAT(value, "pattern")</code></td><td>Converts a value to text in a given format.</td></tr><tr><td><code>CONCATENATEX(table, expr, delimiter, order)</code></td><td>Loops through rows and joins the results into one string.</td></tr></table></div>
+<p class="res"><b>Asha (East)</b> · <b>Jan 2024</b> · <b>Asha, John, Meena, Ravi</b>. FORMAT returns text, so it sorts alphabetically unless you add a sort column.</p></div>
+<div class="ex"><h4>Time intelligence: DATESYTD, DATESINPERIOD, TOTALQTD, PARALLELPERIOD</h4>
+<pre class="dax">Sales QTD = TOTALQTD([Total Sales], DimDate[Date])
+Rolling 2M = CALCULATE([Total Sales], DATESINPERIOD(DimDate[Date], MAX(DimDate[Date]), -2, MONTH))
+Sales YTD (CALCULATE) = CALCULATE([Total Sales], DATESYTD(DimDate[Date]))</pre>
+<div class="tw"><table class="t"><tr><th>Part</th><th>What it does</th></tr><tr><td><code>TOTALQTD / MTD / YTD</code></td><td>Running total from the start of the quarter, month or year to the current date.</td></tr><tr><td><code>DATESINPERIOD(dates, end, n, unit)</code></td><td>Builds a moving window: n units back (negative) or forward from an end date.</td></tr><tr><td><code>MAX(DimDate[Date])</code></td><td>The last date visible in the current cell; the window ends there.</td></tr><tr><td><code>DATESYTD</code></td><td>Returns the date list; CALCULATE applies it.</td></tr></table></div>
+<p class="res">In March, Rolling 2M = Feb 9,365 + Mar 3,300 = <b>12,665</b>. Sales QTD in March = <b>19,025</b> (Q1 = all three months). All of these need a marked Date table.</p></div>
+<div class="ex"><h4>Top N and ranking: TOPN, RANKX</h4>
+<pre class="dax">Top 2 Customers Sales = CALCULATE([Total Sales], TOPN(2, ALL(DimCustomer[Customer]), [Total Sales]))
+Product Rank = RANKX(ALL(DimProduct[Product]), [Total Sales], , DESC, Dense)</pre>
+<div class="tw"><table class="t"><tr><th>Part</th><th>What it does</th></tr><tr><td><code>TOPN(n, table, expression)</code></td><td>Returns the n rows with the highest value of the expression.</td></tr><tr><td><code>ALL(DimCustomer[Customer])</code></td><td>Makes every customer a candidate, not only the visible one.</td></tr><tr><td><code>RANKX(table, expr, , order, ties)</code></td><td>Ranks the current item against all items in the table. Dense ties give 1, 2, 2, 3.</td></tr></table></div>
+<p class="res">Top 2 = Ravi 6,200 + Asha 5,125 = <b>11,325</b>. Product ranks: Laptop 12,000 (<b>1</b>), Monitor 4,400 (<b>2</b>), Mouse 1,500 (<b>3</b>), Keyboard 1,125 (<b>4</b>).</p></div>
+<div class="ex"><h4>Calculated tables: CALENDAR, ADDCOLUMNS, SUMMARIZE</h4>
+<pre class="dax">DimDate = ADDCOLUMNS(CALENDAR(DATE(2024,1,1), DATE(2024,12,31)), "Month", FORMAT([Date], "MMM"), "Quarter", "Q" &amp; QUARTER([Date]))
+Sales By Category = SUMMARIZE(FactSales, DimProduct[Category], "Sales", SUM(FactSales[SalesAmount]))</pre>
+<div class="tw"><table class="t"><tr><th>Part</th><th>What it does</th></tr><tr><td><code>CALENDAR(start, end)</code></td><td>One row per day between two dates.</td></tr><tr><td><code>ADDCOLUMNS(table, name, expr)</code></td><td>Adds computed columns to a table.</td></tr><tr><td><code>SUMMARIZE(table, group col, name, expr)</code></td><td>Like GROUP BY: one row per group with an aggregate.</td></tr></table></div>
+<p class="res">DimDate has <b>366</b> rows (2024 is a leap year). Sales By Category gives <b>Electronics 16,400</b> and <b>Accessories 2,625</b>.</p></div>
+<h3>Frequently used functions</h3>
   <div class="tw"><table class="t"><tr><th>Group</th><th>Functions</th></tr>
   <tr><td><b>Aggregation</b></td><td>SUM, AVERAGE, MIN, MAX, COUNT, COUNTROWS, DISTINCTCOUNT</td></tr>
   <tr><td><b>Filter</b></td><td>CALCULATE, FILTER, ALL, ALLEXCEPT, ALLSELECTED, VALUES, REMOVEFILTERS</td></tr>
@@ -485,7 +621,32 @@ Sales LY     = CALCULATE([Total Sales], SAMEPERIODLASTYEAR(DimDate[Date]))</pre>
     <div class="vz"><h5>Slicer · interactive filter</h5><div class="sl"><span class="s">All</span><span>East</span><span>West</span><span>North</span><span>South</span></div><small>Click a region to filter every visual on the page</small></div>
     <div class="vz"><h5>Table · detail</h5><div class="grid" data-g="vt"></div></div>
   </div>
-  <h3>Visual types by purpose</h3>
+  <h3>More visuals: flow, bridge, relationship and distribution</h3>
+<div class="gal">
+<div class="vz"><h5>Funnel · stages</h5><svg viewBox="0 0 300 130" width="100%"><rect x="20" y="8" width="260" height="26" fill="#118dff"/><rect x="55" y="38" width="190" height="26" fill="#12239e"/><rect x="75" y="68" width="150" height="26" fill="#e66c37"/><rect x="105" y="98" width="90" height="26" fill="#6b007b"/><g font-size="11" text-anchor="middle" fill="#fff" font-weight="700"><text x="150" y="25">West 6,200</text><text x="150" y="55">East 5,125</text><text x="150" y="85">South 5,040</text><text x="150" y="115">North 2,660</text></g></svg><small>Regions ranked by sales. Classic use: Leads, Qualified, Proposal, Won.</small></div>
+<div class="vz"><h5>Waterfall · bridge</h5><svg viewBox="0 0 300 150" width="100%"><line x1="15" y1="125" x2="290" y2="125" stroke="#ccc"/><rect x="30" y="5" width="60" height="120" fill="#118dff"/><rect x="120" y="5" width="60" height="89" fill="#e66c37"/><rect x="210" y="94" width="60" height="31" fill="#1b7a3d"/><g font-size="11" text-anchor="middle" fill="#444"><text x="60" y="140">Sales</text><text x="150" y="140">Cost</text><text x="240" y="140">Profit</text></g><g font-size="11" text-anchor="middle" fill="#fff" font-weight="700"><text x="60" y="70">19,025</text><text x="150" y="55">-14,100</text><text x="240" y="114">4,925</text></g></svg><small>Sales minus Cost leaves Profit. Red bars subtract, blue and green are totals.</small></div>
+<div class="vz"><h5>Scatter · relationship</h5><svg viewBox="0 0 300 130" width="100%"><line x1="25" y1="110" x2="290" y2="110" stroke="#ccc"/><line x1="25" y1="10" x2="25" y2="110" stroke="#ccc"/><g fill="#118dff"><circle cx="51" cy="43" r="5"/><circle cx="197" cy="100" r="5"/><circle cx="63" cy="81" r="5"/><circle cx="134" cy="91" r="5"/><circle cx="59" cy="17" r="5"/><circle cx="80" cy="66" r="5"/><circle cx="280" cy="95" r="5"/><circle cx="43" cy="70" r="5"/></g><text x="30" y="124" font-size="10" fill="#555">Qty →</text><text x="2" y="12" font-size="10" fill="#555">Sales</text></svg><small>One dot per order: Qty (X) vs SalesAmount (Y). Few big-ticket items sell in small quantity.</small></div>
+<div class="vz"><h5>Line and column · combo</h5><svg viewBox="0 0 300 130" width="100%"><line x1="15" y1="110" x2="290" y2="110" stroke="#ccc"/><rect x="40" y="46" width="50" height="64" fill="#118dff"/><rect x="125" y="16" width="50" height="94" fill="#118dff"/><rect x="210" y="77" width="50" height="33" fill="#118dff"/><polyline fill="none" stroke="#e66c37" stroke-width="3" points="65,36 150,50 235,26"/><g fill="#e66c37"><circle cx="65" cy="36" r="4"/><circle cx="150" cy="50" r="4"/><circle cx="235" cy="26" r="4"/></g><g font-size="11" text-anchor="middle" fill="#444"><text x="65" y="124">Jan</text><text x="150" y="124">Feb</text><text x="235" y="124">Mar</text></g></svg><small>Columns: Sales. Line: Profit margin (26.1%, 25.3%, 27.3%) on a secondary axis.</small></div>
+<div class="vz"><h5>Stacked column · composition</h5><svg viewBox="0 0 300 130" width="100%"><line x1="15" y1="110" x2="290" y2="110" stroke="#ccc"/><rect x="30" y="29" width="45" height="81" fill="#118dff"/><rect x="30" y="11" width="45" height="18" fill="#e66c37"/><rect x="95" y="82" width="45" height="28" fill="#118dff"/><rect x="95" y="68" width="45" height="14" fill="#e66c37"/><rect x="160" y="29" width="45" height="81" fill="#118dff"/><rect x="225" y="20" width="45" height="90" fill="#118dff"/><rect x="225" y="10" width="45" height="10" fill="#e66c37"/><g font-size="11" text-anchor="middle" fill="#444"><text x="52" y="124">East</text><text x="117" y="124">North</text><text x="182" y="124">South</text><text x="247" y="124">West</text></g></svg><small><span style="color:#118dff">■</span> Electronics <span style="color:#e66c37">■</span> Accessories per region</small></div>
+<div class="vz"><h5>Area chart · volume over time</h5><svg viewBox="0 0 300 130" width="100%"><line x1="15" y1="110" x2="290" y2="110" stroke="#ccc"/><polygon fill="#118dff" opacity=".35" points="40,110 40,64 150,22 260,86 260,110"/><polyline fill="none" stroke="#118dff" stroke-width="3" points="40,64 150,22 260,86"/><g font-size="11" text-anchor="middle" fill="#444"><text x="40" y="124">Jan</text><text x="150" y="124">Feb</text><text x="260" y="124">Mar</text></g></svg><small>Same monthly sales, filled to emphasize magnitude</small></div>
+<div class="vz"><h5>KPI · actual vs target</h5><div class="card1"><strong>19,025</strong><span>Total Sales · Target 20,000</span><span style="color:#1b7a3d;font-weight:700">▲ 95% of target</span></div><small>Shows value, goal and status color</small></div>
+<div class="vz"><h5>Decomposition tree · drill by any field</h5><svg viewBox="0 0 300 130" width="100%"><g font-size="11" fill="#fff" text-anchor="middle" font-weight="700"><rect x="5" y="48" width="70" height="34" rx="4" fill="#323130"/><text x="40" y="63">Total</text><text x="40" y="76">19,025</text><rect x="105" y="14" width="85" height="34" rx="4" fill="#118dff"/><text x="147" y="29">Electronics</text><text x="147" y="42">16,400</text><rect x="105" y="82" width="85" height="34" rx="4" fill="#e66c37"/><text x="147" y="97">Accessories</text><text x="147" y="110">2,625</text><rect x="220" y="4" width="75" height="28" rx="4" fill="#12239e"/><text x="257" y="22">West 5,600</text><rect x="220" y="36" width="75" height="28" rx="4" fill="#12239e"/><text x="257" y="54">South 5,040</text></g><g stroke="#999" fill="none"><path d="M75 65 H90 V31 H105"/><path d="M75 65 H90 V99 H105"/><path d="M190 31 H205 V18 H220"/><path d="M190 31 H205 V50 H220"/></g></svg><small>Split Sales by Category, then Region. AI split picks the biggest driver.</small></div>
+</div>
+<h3>How to build the new visuals</h3>
+<div class="tw"><table class="t"><tr><th>Visual</th><th>Field wells</th><th>Use when</th></tr>
+<tr><td><b>Funnel</b></td><td>Category = stage or region, Values = measure</td><td>Process with drop-off, such as lead to customer. Hover to see % of first and previous stage.</td></tr>
+<tr><td><b>Waterfall</b></td><td>Category = item, Y axis = measure (costs as negatives), optional Breakdown</td><td>Explaining how a start value becomes an end value, or month-over-month change. Breakdown shows the biggest contributors.</td></tr>
+<tr><td><b>Scatter / bubble</b></td><td>X, Y = measures, Values = detail (Order), Size, Legend, Play axis</td><td>Relationship, outliers and clusters between two measures.</td></tr>
+<tr><td><b>Line and clustered column</b></td><td>Shared axis = Month, Column = Total Sales, Line = Profit Margin %</td><td>Two measures with different scales.</td></tr>
+<tr><td><b>100% stacked</b></td><td>Axis = Region, Legend = Category, Values = Total Sales</td><td>Comparing shares instead of totals.</td></tr>
+<tr><td><b>Ribbon</b></td><td>X = Month, Legend = Product, Y = Total Sales</td><td>Rank changes over time.</td></tr>
+<tr><td><b>Decomposition tree</b></td><td>Analyze = measure, Explain by = Category, Region, Customer</td><td>Root-cause drill-down in any order.</td></tr>
+<tr><td><b>Key influencers</b></td><td>Analyze = field to explain, Explain by = candidate fields</td><td>Finding what drives a metric, such as high profit margin.</td></tr>
+<tr><td><b>Smart narrative / Q&amp;A</b></td><td>Select visuals or type a question</td><td>Auto-generated text summary and natural-language questions.</td></tr>
+<tr><td><b>Filled map / Shape map</b></td><td>Location = Region or State, Color saturation = measure</td><td>Geographic patterns (needs geographic data categories).</td></tr>
+<tr><td><b>Sankey, Sunburst, Box plot (custom)</b></td><td>Import from AppSource</td><td>Flows, hierarchies and distributions.</td></tr></table></div>
+<div class="tip"><b>Which visual?</b> Compare: bar or column. Trend: line or area. Share: donut or treemap. Stages: funnel. What caused the change: waterfall. Two measures: scatter. Target: KPI or gauge.</div>
+<h3>Visual types by purpose</h3>
   <div class="tw"><table class="t"><tr><th>Purpose</th><th>Visuals</th><th>Use when</th></tr>
   <tr><td><b>Comparison</b></td><td>Bar, column, clustered, stacked</td><td>Comparing categories (bar for long names)</td></tr>
   <tr><td><b>Trend</b></td><td>Line, area, ribbon</td><td>Change over time</td></tr>
